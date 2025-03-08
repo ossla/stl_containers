@@ -1,0 +1,13 @@
+.vscode
+
+build
+
+release
+
+*.o
+
+*.out
+
+*.exe
+
+
