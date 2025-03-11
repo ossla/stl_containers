@@ -1,13 +1,13 @@
-.vscode
+**/.vscode
 
-build
+**/build
 
-release
+**/release
 
-*.o
+**/*.o
 
-*.out
+**/*.out
 
-*.exe
+**/*.exe
 
 

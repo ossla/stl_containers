@@ -1,5 +1,6 @@
-#include "self-vector.h"
 #include <iostream>
+
+#include <cassert>
 
 struct C {
     C() noexcept {
@@ -25,6 +26,10 @@ struct C {
         ++dtor;
     }
 
+    static size_t InstanceCount() {
+        return def_ctor + copy_ctor + move_ctor - dtor;
+    }
+
     static void Reset() {
         def_ctor = 0;
         copy_ctor = 0;
@@ -42,15 +47,17 @@ struct C {
     inline static size_t dtor = 0;
 };
 
-void Dump() {
-    using namespace std;
-    cout << "Def ctors: "sv << C::def_ctor              //
-         << ", Copy ctors: "sv << C::copy_ctor          //
-         << ", Move ctors: "sv << C::move_ctor          //
-         << ", Copy assignments: "sv << C::copy_assign  //
-         << ", Move assignments: "sv << C::move_assign  //
-         << ", Dtors: "sv << C::dtor << endl;
+void Set(const C& c) {
+    std::cout << "lvalue const reference" << std::endl;
+    return;
+}
+
+void Set(C&& c) {
+    std::cout << "rvalue reference" << std::endl;
 }
 
 int main() {
+    C c;
+    Set({});
+    Set(c);
 }
