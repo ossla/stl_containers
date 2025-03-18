@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <type_traits>
 #include <cassert>
 #include <cstdlib>
 #include <memory>
@@ -103,6 +104,28 @@ public:
     ~Vector() {
         Reset();
     }
+
+    using iterator = T*;
+    using const_iterator = const T*;
+    
+    iterator begin() noexcept {
+        return data_ + 0;
+    }
+    iterator end() noexcept {
+        return data_ + size_;
+    }
+    const_iterator begin() const noexcept {
+        return const_cast<Vector&>(*this).begin();
+    }
+    const_iterator end() const noexcept {
+        return const_cast<Vector&>(*this).end();
+    }
+    const_iterator cbegin() const noexcept {
+        return begin();
+    }
+    const_iterator cend() const noexcept {
+        return end();
+    }
 public:
     size_t Size() const noexcept {
         return size_;
@@ -170,7 +193,7 @@ public:
 
         if (capacity > data_.Capacity()) {
             RawMemory<T> buffer(capacity);
-            MoveOrCopy(data_.GetAddress(), size_, buffer.GetAddress());
+            MoveOrCopyUninitialized(data_.GetAddress(), size_, buffer.GetAddress());
 
             std::destroy_n(data_.GetAddress(), size_);
             data_.Swap(buffer);
@@ -191,17 +214,14 @@ public:
         size_ = new_size;
     }
 
-    /* так же как и в overflow, это универсальная ссылка, 
-       которая позволяет работать с const T& и T&& 
-       при помощи схлопывания */
+    /* 
+        так же как и в OverflowPush, emplace_back, ...
+        это универсальная ссылка, которая позволяет 
+        работать с const T& и T&& при помощи схлопывания
+    */
     template <typename U>
     void PushBack(U&& value) {
-        if (Capacity() == size_) {
-            Overflow(std::forward<U>(value));
-        } else {
-            new (data_ + size_) T(std::forward<U>(value));
-        }
-        ++size_;    
+        EmplaceBack(std::forward<U>(value)); 
     }
 
     void PopBack() {
@@ -212,14 +232,48 @@ public:
     }
 
     template <typename... Args>
+    iterator Emplace(const_iterator pos, Args&&... args) {
+        size_t dist = pos - begin();
+
+        if (Capacity() == size_) {
+            OverflowPush(dist, std::forward<Args>(args)...);
+        } else {
+            iterator position = begin() + dist;
+            if (dist == size_) {
+                new (position) T(std::forward<Args>(args)...);
+                ++size_;
+            } else {
+                T* temp = new T(std::forward<Args>(args)...);
+                MoveOrCopyBackward(position, end(), end()+1);
+                *position = std::move(*temp);
+                ++size_;
+                delete temp;
+            }
+        }
+        return data_ + dist;
+    }
+    iterator Erase(const_iterator pos) noexcept(std::is_nothrow_move_assignable_v<T>) {
+        size_t dist = pos - data_.GetAddress();
+        std::move(data_ + dist + 1, data_ + size_, data_ + dist);
+        data_[size_-1].~T();
+        --size_;
+        return data_ + dist;
+    }
+
+    template <typename... Args>
     T& EmplaceBack(Args&&... args) {
         if (Capacity() == size_) {
-            Overflow(std::forward<Args>(args)...);
+            OverflowPush(size_, std::forward<Args>(args)...);
         } else {
             new (data_ + size_) T(std::forward<Args>(args)...);
+            ++size_;
         }
-        ++size_;
         return data_[size_-1];
+    }
+
+    template <typename U>
+    iterator Insert(const_iterator pos, U&& value) {
+        return Emplace(pos, std::forward<U>(value));
     }
 
 private:
@@ -227,8 +281,7 @@ private:
     size_t size_ = 0;
 
 private:
-    void MoveOrCopy(T* src, size_t n, T* dest) {
-        
+    void MoveOrCopyUninitialized(iterator src, size_t n, iterator dest) {
         if constexpr (std::is_nothrow_move_constructible_v<T> 
                     || !std::is_copy_constructible_v<T>) {
             std::uninitialized_move_n(src, n, dest);
@@ -237,20 +290,36 @@ private:
         }
     }
 
+    void MoveOrCopyBackward(iterator first, iterator last, iterator d_last) {
+        if constexpr (std::is_nothrow_move_constructible_v<T> 
+                || !std::is_copy_constructible_v<T>) {
+            std::move_backward(first, last, d_last);
+        } else {
+            std::copy_backward(first, last, d_last);
+        }
+    }
+
     
     /* Почему не T&&?
     Type&& — это универсальная ссылка (perfect forwarding).
-    - Когда передается lvalue (обычная переменная), Type выводится 
-    как T&, и получается T& &&, которое схлопывается в T& 
+    - Когда передается lvalue, Type выводится 
+    как T& или const T&, и получается T& &&, которое схлопывается в T&
     
-    - Когда передается rvalue, Type выводится как T&&,
-    и получается T&& &&, которое схлопывается в T&&  */
+    - Когда передается rvalue, Type выводится 
+    как T&&, и получается T&& &&, которое схлопывается в T&&  */
     template <typename... U>
-    void Overflow(U&&... val) {
+    void OverflowPush(size_t pos_n, U&&... val) {
         RawMemory<T> buffer(size_ == 0 ? 1 : size_ * 2);
-        new (buffer + size_) T(std::forward<U>(val)...);
-        MoveOrCopy(data_.GetAddress(), size_, buffer.GetAddress());
+        new (buffer + pos_n) T(std::forward<U>(val)...);
+        
+        /* до pos */
+        MoveOrCopyUninitialized(data_.GetAddress(), pos_n
+                                , buffer.GetAddress());
+        /* после */
+        MoveOrCopyUninitialized(data_ + pos_n, size_-pos_n
+                                , buffer + pos_n + 1);
         std::destroy_n(data_.GetAddress(), size_);
         data_.Swap(buffer);
+        ++size_;
     }
 };
