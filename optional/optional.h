@@ -86,6 +86,13 @@ public:
         return *this;
     }
 
+    template <typename... Args>
+    void Emplace(Args&&... args) {
+        Reset();
+        new (data_) T(std::forward<Args>(args)...);
+        is_initialized_ = true;
+    }
+
     ~Optional() {
         Reset();
     }
