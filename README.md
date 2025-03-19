@@ -9,13 +9,12 @@
 
 ### `self::Vector`
 
-#### Конструкторы и деструктор:
+#### Конструкторы:
 ```cpp
 Vector() noexcept = default;
 Vector(const size_t size);
 Vector(const Vector& other);
 Vector(Vector&& other) noexcept;
-~Vector();
 ```
 
 #### Операторы:
@@ -72,14 +71,13 @@ iterator Insert(const_iterator pos, U&& value);
 
 ### `self::Optional`
 
-#### Конструкторы и деструктор:
+#### Конструкторы:
 ```cpp
 Optional() = default;
 Optional(const T& value);
 Optional(T&& value);
 Optional(const Optional& other);
 Optional(Optional&& other);
-~Optional();
 ```
 
 #### Операторы:
@@ -112,13 +110,12 @@ void Emplace(Args&&... args);
 
 ### `self::SingleLinkedList`
 
-#### Конструкторы и деструктор:
+#### Конструкторы:
 ```cpp
 SingleLinkedList();
 SingleLinkedList(const std::initializer_list<Type>& items);
 SingleLinkedList(const SingleLinkedList& other);
 SingleLinkedList(SingleLinkedList&& other);
-~SingleLinkedList();
 ```
 
 #### Операторы:
