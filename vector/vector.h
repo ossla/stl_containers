@@ -100,45 +100,15 @@ public:
         std::uninitialized_copy_n(other.data_.GetAddress(), size_, data_.GetAddress());
     }
     Vector(Vector&& other) : data_(std::move(other.data_)), size_(other.size_) {}
+    Vector(const std::initializer_list<Type>& items) {
+        Reserve(items.size);
+        for (auto&& el : items) {
+            PushBack(std::move(el));
+        }
+    }
 
     ~Vector() {
         Reset();
-    }
-
-    using iterator = T*;
-    using const_iterator = const T*;
-    
-    iterator begin() noexcept {
-        return data_ + 0;
-    }
-    iterator end() noexcept {
-        return data_ + size_;
-    }
-    const_iterator begin() const noexcept {
-        return const_cast<Vector&>(*this).begin();
-    }
-    const_iterator end() const noexcept {
-        return const_cast<Vector&>(*this).end();
-    }
-    const_iterator cbegin() const noexcept {
-        return begin();
-    }
-    const_iterator cend() const noexcept {
-        return end();
-    }
-public:
-    size_t Size() const noexcept {
-        return size_;
-    }
-
-    size_t Capacity() const noexcept {
-        return data_.Capacity();
-    }
-    void Reset() {
-        if (data_.GetAddress()) {
-            std::destroy_n(data_.GetAddress(), size_);
-        }
-        size_ = 0;
     }
 
     const T& operator[](size_t index) const noexcept {
@@ -150,15 +120,15 @@ public:
         return data_[index];
     }
 
-    Vector& operator=(Vector&& rhs) noexcept {
+    Vector& operator=(const std::initializer_list<Type>& items) noexcept {
         data_ = std::move(rhs.data_);
         std::swap(size_, rhs.size_);
         return *this;
     }
-
-    void Swap(Vector& other) noexcept {
-        data_.Swap(other.data_);
-        std::swap(size_, other.size_);
+    Vector& operator=(Vector&& rhs) noexcept {
+        data_ = std::move(rhs.data_);
+        std::swap(size_, rhs.size_);
+        return *this;
     }
 
     Vector& operator=(const Vector& rhs) {
@@ -187,6 +157,47 @@ public:
             size_ = rhs.size_;
         }
         return *this;
+    }
+
+    using iterator = T*;
+    using const_iterator = const T*;
+    
+    iterator begin() noexcept {
+        return data_ + 0;
+    }
+    iterator end() noexcept {
+        return data_ + size_; 
+    }
+    [[nodiscard]] const_iterator begin() const noexcept {
+        return const_cast<Vector&>(*this).begin();
+    }
+    [[nodiscard]] const_iterator end() const noexcept {
+        return const_cast<Vector&>(*this).end();
+    }
+    [[nodiscard]] const_iterator cbegin() const noexcept {
+        return begin();
+    }
+    [[nodiscard]] const_iterator cend() const noexcept {
+        return end();
+    }
+public:
+    [[nodiscard]] size_t Size() const noexcept {
+        return size_;
+    }
+
+    [[nodiscard]] size_t Capacity() const noexcept {
+        return data_.Capacity();
+    }
+    void Reset() {
+        if (data_.GetAddress()) {
+            std::destroy_n(data_.GetAddress(), size_);
+        }
+        size_ = 0;
+    }
+
+    void Swap(Vector& other) noexcept {
+        data_.Swap(other.data_);
+        std::swap(size_, other.size_);
     }
 
     void Reserve(size_t capacity) {
