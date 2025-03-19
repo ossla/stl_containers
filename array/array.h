@@ -1,5 +1,9 @@
+#pragma once
 #include <memory>
 
+namespace self {
+
+/* простенькая реализация std::array, обертка RAII над статическим массивом */
 template <typename T, size_t N>
 class Array {
 public:
@@ -47,7 +51,4 @@ private:
     T data_[N];
 };
 
-int main() {
-    Array<int, 5> arr;
-    return 0;
-}
+} // self

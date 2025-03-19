@@ -85,6 +85,9 @@ private:
     }
 };
 
+
+namespace self {
+
 template <typename T>
 class Vector {
 public:
@@ -100,12 +103,6 @@ public:
         std::uninitialized_copy_n(other.data_.GetAddress(), size_, data_.GetAddress());
     }
     Vector(Vector&& other) : data_(std::move(other.data_)), size_(other.size_) {}
-    Vector(const std::initializer_list<Type>& items) {
-        Reserve(items.size);
-        for (auto&& el : items) {
-            PushBack(std::move(el));
-        }
-    }
 
     ~Vector() {
         Reset();
@@ -120,11 +117,6 @@ public:
         return data_[index];
     }
 
-    Vector& operator=(const std::initializer_list<Type>& items) noexcept {
-        data_ = std::move(rhs.data_);
-        std::swap(size_, rhs.size_);
-        return *this;
-    }
     Vector& operator=(Vector&& rhs) noexcept {
         data_ = std::move(rhs.data_);
         std::swap(size_, rhs.size_);
@@ -334,3 +326,5 @@ private:
         ++size_;
     }
 };
+
+} // self

@@ -1,3 +1,4 @@
+#pragma once
 #include <cassert>
 #include <cstddef>
 #include <iostream>
@@ -5,9 +6,12 @@
 #include <string>
 #include <utility>
 
+
+namespace self {
+
 template <typename Type>
 class SingleLinkedList {
-    // Узел списка
+    /* Узел односвязного списка */
     struct Node {
         Node() = default;
         Node(const Type& val, Node* next)
@@ -297,3 +301,6 @@ template <typename Type>
 bool operator>=(const SingleLinkedList<Type>& lhs, const SingleLinkedList<Type>& rhs) {
     return !(lhs < rhs);
 }
+
+
+} // self

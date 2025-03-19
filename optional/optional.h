@@ -1,6 +1,8 @@
+#pragma once
 #include <stdexcept>
 #include <utility>
 
+namespace self {
 // Исключение этого типа должно генерироватся при обращении к пустому optional
 class BadOptionalAccess : public std::exception {
 public:
@@ -154,3 +156,5 @@ private:
     alignas(T) char data_[sizeof(T)];
     bool is_initialized_ = false;
 };
+
+} // self
